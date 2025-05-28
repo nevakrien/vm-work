@@ -1,6 +1,6 @@
-GCC = gcc
+GCC = gcc-14
 CLANG = clang
-CFLAGS = -Wall -Wextra -O3 -march=native
+CFLAGS = -Wall -Wextra -march=native -O3#-g3 -fsanitize=address
 
 SRC = test.c
 GCC_ASM = gcc.s

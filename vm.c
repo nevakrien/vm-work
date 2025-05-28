@@ -2,17 +2,19 @@
 #include "string.h"
 #include "vm.h"
 
+//this is used to encourage SIMD on platforms that support it for n around 8 probably
 #define ADD_N_TS(t,n) \
 	do{\
 		t a[n],b[n];\
-			pop_value(vm,&b,sizeof(a));\
-			pop_value(vm,&a,sizeof(b));\
+			pop_value(vm,&b,sizeof(b));\
+			pop_value(vm,&a,sizeof(a));\
 \
 			for(int i=0;i<n;i++)\
 				a[i]+=b[i];\
 \
 			push_value(vm,&a,sizeof(a));\
 	}while(0)\
+
 
 void vm_call(Vm* vm,Opcode opcode){
 	switch (opcode){

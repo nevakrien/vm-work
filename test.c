@@ -1,15 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
 #include "vm.h"
 
-#define STACKSIZE 512 //has to be this minimum
+#define STACKSIZE 1024 //has to be this minimum
 
 // Basic push/pop round-trip tests
 void test_push_pop_all_types(Vm* vm) {
-    vm->sp = (char*)vm->sp + 64;
-
     // Test 1: int32_t
     {
         int32_t val = 0x12345678;
@@ -55,12 +54,11 @@ void test_push_pop_all_types(Vm* vm) {
         assert(memcmp(val, out, 4) == 0);
     }
 
-    printf("Basic push/pop tests passed.\n");
+    // printf("Basic push/pop tests passed.\n");
 }
 
 // Vector addition for uint32_t
-void test_uint32_add(Vm* vm, Opcode op, int n) {
-    vm->sp = (char*)vm->sp + 512;
+static void test_uint32_add(Vm* vm, Opcode op, int n) {
     uint32_t a[16] = {0}, b[16] = {0}, out[16] = {0};
 
     for (int i = 0; i < n; i++) {
@@ -78,8 +76,7 @@ void test_uint32_add(Vm* vm, Opcode op, int n) {
 }
 
 // Vector addition for _Float16
-void test_float16_add(Vm* vm, Opcode op, int n) {
-    vm->sp = (char*)vm->sp + 512;
+static void test_float16_add(Vm* vm, Opcode op, int n) {
     _Float16 a[16] = {0}, b[16] = {0}, out[16] = {0};
 
     for (int i = 0; i < n; i++) {
@@ -93,29 +90,47 @@ void test_float16_add(Vm* vm, Opcode op, int n) {
     pop_value(vm, out, n * sizeof(_Float16));
 
     for (int i = 0; i < n; i++) {
-        _Float16 expected = a[i] + b[i];
-        assert(out[i] == expected); // bitwise exact, _Float16 is deterministic
+        assert(out[i] == a[i] + b[i]); // bitwise exact, _Float16 is deterministic
     }
 }
 
-int main() {
+void test_opcodes(Vm* vm){
+    test_uint32_add(vm, UINT32_ADD,    1);
+    test_uint32_add(vm, UINT32_ADD2,   2);
+    test_uint32_add(vm, UINT32_ADD4,   4);
+    test_uint32_add(vm, UINT32_ADD8,   8);
+    test_uint32_add(vm, UINT32_ADD16, 16);
+
+    test_float16_add(vm, FLOAT16_ADD,    1);
+    test_float16_add(vm, FLOAT16_ADD2,   2);
+    test_float16_add(vm, FLOAT16_ADD4,   4);
+    test_float16_add(vm, FLOAT16_ADD8,   8);
+    test_float16_add(vm, FLOAT16_ADD16, 16);
+
+    // printf("All Opcode tests passed.\n");
+
+
+}
+
+
+int main(int argc, char** argv) {
+    int iterations = 1;
+    if (argc > 1) {
+        iterations = atoi(argv[1]);
+        if (iterations <= 0) {
+            fprintf(stderr, "Invalid iteration count: %s\n", argv[1]);
+            return 1;
+        }
+    }
+
     char stack[STACKSIZE];
     Vm vm = { .sp = stack + sizeof(stack) };
 
-    test_push_pop_all_types(&vm);
+    for (int i = 0; i < iterations; ++i) {
+        test_push_pop_all_types(&vm);
+        test_opcodes(&vm);
+    }
 
-    test_uint32_add(&vm, UINT32_ADD,    1);
-    test_uint32_add(&vm, UINT32_ADD2,   2);
-    test_uint32_add(&vm, UINT32_ADD4,   4);
-    test_uint32_add(&vm, UINT32_ADD8,   8);
-    test_uint32_add(&vm, UINT32_ADD16, 16);
-
-    test_float16_add(&vm, FLOAT16_ADD,    1);
-    test_float16_add(&vm, FLOAT16_ADD2,   2);
-    test_float16_add(&vm, FLOAT16_ADD4,   4);
-    test_float16_add(&vm, FLOAT16_ADD8,   8);
-    test_float16_add(&vm, FLOAT16_ADD16, 16);
-
-    printf("All opcode tests passed.\n");
+    printf("All tests passed.\n");
     return 0;
 }
