@@ -21,33 +21,33 @@ aligment is yet another issue on this front i am not sure how to solve
 
 # Instruction format (under dev)
 
-### basic stack
-```
-push(type,n,alignment) //aligment here is assumed known stack aligment
-pop(type,n,alignment)
-```
+note that the current implementation just ignores aligment all togther.
+we can add it later but its just inherntly tricky
 
 ### arithmetic
 ```
-Add(type,type,n(runtime?),alignment)
-Sub(type,type,n(runtime?),alignment)
-Mul(type,type,n(runtime?),alignment)
-Div(type,type,n(runtime?),alignment)
-MulDiv(type,type,type,n(runtime?),alignment)
+Add(type,type,n(runtime?))
+Sub(type,type,n(runtime?))
+Mul(type,type,n(runtime?))
+Div(type,type,n(runtime?))
+MulDiv(type,type,type,n(runtime?))
 ```
 
 ### vars handling
 ```
-inject(type) //writes the top if the stack to a pointer below
+inject(type,n(runtime?)) //writes the top if the stack to a pointer below
 unbox(type) //reads the top pointer
 
 read-local(type,offset) //this is in relation to local frame
+write-local(type,offset) //this is in relation to local frame
 
 get-sp
 set-sp
 
-alloc-frame(size,alignment)
+alloc-frame(size)
 drop-frame
+
+write-const(16bit)
 ```
 
 ### control-flow
@@ -83,15 +83,30 @@ write-reg(reg) //only for embedded
 ### threads?
 this is potentially a future extension we will see
 
+### register optimization
+so a stack based VM if naively imlemented has a very hard time with basic arithmetic. to combat this we do want a small amount of regs but these should be ACTUAL hardware level regs.
+
+in other words unlike a register machine where the number of hardware regs is artificially incresed we purposfully artificially decrese it.
+
+we dont want to push this on the programer at all as this is an implementation detail and may be machine dependent. note that when replacing this backend with say LLVM this optimization would be done trivially by LLVM thus it is not needed in external APIs and would likelly just cause damage
+
+small functions like ADD would have an inlined function definition that takes a register input and returns a register output.
+this allows for chains off small arithmetic operations to be done entirly inside of a registers.
+
+forth has the top of the stack optimization for this.
+however it does not work for us since we actually dont look at the top of the stack as anything special
+
 # types
 Ptr T
 
 u8 u16 u32 u64
 i8 i16 i32 i64
 r8 r16 r32 r64 (reals new format)
-f16 f32 f64
+   f16 f32 f64
 
 # considerations
 whether or not to include aligment is INCREDBLY tricky.
 on the 1 hand adding that polution into every operation bloats the VM.
-on the other hand not including it means even reading a 32bit int on 32bit is unaligned. we could hack around it by aligning the stack to a constant but that then removes the possibility of unaligned reads
+on the other hand not including it puts us into some anoying machine dependnce (or unaligned reads for types like int) and missed SIMD optimizations.
+
+we will do what C does and have the stack at natural aligment across frames. return values should generally match this aligment with padding
