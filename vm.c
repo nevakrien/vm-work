@@ -1,19 +1,6 @@
 #include "stdint.h"
 #include "string.h"
-
-typedef struct {
-	char* sp;
-} Vm;
-
-static inline void pop_value(Vm* vm,void* target,size_t count){
-	memcpy(vm->sp+1-count,target,count);
-	vm->sp-=count;
-}
-
-static inline void push_value(Vm* vm,void* target,size_t count){
-	memcpy(target,vm->sp+1-count,count);
-	vm->sp+=count;
-}
+#include "vm.h"
 
 #define ADD_N_TS(t,n) \
 	do{\
@@ -30,19 +17,19 @@ static inline void push_value(Vm* vm,void* target,size_t count){
 void vm_call(Vm* vm,char opcode){
 	switch (opcode){
 		case 0:
-			ADD_N_TS(uint32_t,1);
+			ADD_N_TS(_Float16,1);
 			break;
 		case 1:
-			ADD_N_TS(uint32_t,2);
+			ADD_N_TS(_Float16,2);
 			break;
 		case 2:
-			ADD_N_TS(uint32_t,4);
+			ADD_N_TS(_Float16,4);
 			break;
 		case 3:
-			ADD_N_TS(uint32_t,8);
+			ADD_N_TS(_Float16,8);
 			break;
 		case 4:
-			ADD_N_TS(uint32_t,16);
+			ADD_N_TS(_Float16,16);
 			break;
 	}
 }
